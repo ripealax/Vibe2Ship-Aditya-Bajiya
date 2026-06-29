@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Community Hero - Hyperlocal Problem Solver</title>
+  <!-- SEO Tags -->
+  <meta name="description" content="An interactive community portal designed to report, validate, track, and resolve hyperlocal issues through collaboration and intelligent assistance.">
+  
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <!-- FontAwesome / Lucide (via CDN script) -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- ChartJS CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div id="app-container">
+    <!-- Sidebar Navigation -->
+    <aside>
+      <div class="logo-container">
+        <div class="logo-icon">
+          <i data-lucide="shield-check"></i>
+        </div>
+        <span class="logo-text">COMMUNITY HERO</span>
+      </div>
+      
+      <ul class="nav-links">
+        <li class="nav-item active" data-target="dashboard-view">
+          <button><i data-lucide="layout-dashboard"></i> <span>Dashboard</span></button>
+        </li>
+        <li class="nav-item" data-target="feed-view">
+          <button><i data-lucide="message-square"></i> <span>Community Feed</span></button>
+        </li>
+        <li class="nav-item" data-target="report-view">
+          <button><i data-lucide="plus-circle"></i> <span>Report Issue</span></button>
+        </li>
+        <li class="nav-item" data-target="analytics-view">
+          <button><i data-lucide="bar-chart-3"></i> <span>Impact & Analytics</span></button>
+        </li>
+        <li class="nav-item" data-target="gamify-view">
+          <button><i data-lucide="award"></i> <span>Hero Center</span></button>
+        </li>
+        <li class="nav-item authority-only" data-target="authority-view" style="display: none;">
+          <button><i data-lucide="wrench"></i> <span>Authority Console</span></button>
+        </li>
+      </ul>
+
+      <div class="user-profile-badge">
+        <div class="profile-avatar" id="nav-avatar">A</div>
+        <div class="profile-info">
+          <span class="profile-name" id="nav-username">Alex Rivera</span>
+          <span class="profile-points" id="nav-points"><i data-lucide="sparkles" style="display:inline; width:12px; height:12px;"></i> 1,450 XP</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Workspace -->
+    <main>
+      <header>
+        <h1 class="view-title" id="main-view-title">Dashboard Overview</h1>
+        
+        <div class="header-actions">
+          <div class="role-toggle-container">
+            <button class="role-btn active" id="role-citizen-btn">Citizen</button>
+            <button class="role-btn" id="role-authority-btn">Authority</button>
+          </div>
+          
+          <button id="noti-bell-btn" style="background: transparent; border: none; color: var(--text-muted); cursor: pointer; position: relative;">
+            <i data-lucide="bell" style="width: 22px; height: 22px;"></i>
+            <span style="position: absolute; top: -2px; right: -2px; width: 8px; height: 8px; background: var(--primary); border-radius: 50%; display: block; box-shadow: 0 0 5px var(--primary);"></span>
+          </button>
+        </div>
+      </header>
+
+      <div class="content-viewport">
+        
+        <!-- DASHBOARD VIEW -->
+        <section id="dashboard-view" class="view-section active">
+          <div class="dashboard-grid">
+            <div class="stats-row">
+              <div class="stat-card">
+                <div class="stat-icon"><i data-lucide="alert-triangle"></i></div>
+                <div class="stat-info">
+                  <span class="stat-label">Active Issues</span>
+                  <span class="stat-value" id="stat-active-issues">12</span>
+                </div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-icon"><i data-lucide="check-circle-2"></i></div>
+                <div class="stat-info">
+                  <span class="stat-label">Issues Resolved</span>
+                  <span class="stat-value" id="stat-resolved-issues">84</span>
+                </div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-icon"><i data-lucide="users"></i></div>
+                <div class="stat-info">
+                  <span class="stat-label">Active Heroes</span>
+                  <span class="stat-value" id="stat-citizens">342</span>
+                </div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-icon"><i data-lucide="check-check"></i></div>
+                <div class="stat-info">
+                  <span class="stat-label">Verification Rate</span>
+                  <span class="stat-value" id="stat-verify-rate">94%</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Left column: Map -->
+            <div class="map-container-wrapper">
+              <div id="map"></div>
+            </div>
+
+            <!-- Right column: Recent Activity list -->
+            <div class="recent-activity-panel">
+              <div class="panel-header">
+                <span>Recent Activity</span>
+                <i data-lucide="clock" style="width:16px; height:16px; color: var(--text-muted);"></i>
+              </div>
+              <ul class="activity-list" id="dashboard-activity-list">
+                <!-- Activity elements inserted dynamically -->
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        <!-- COMMUNITY FEED VIEW -->
+        <section id="feed-view" class="view-section">
+          <div class="feed-controls">
+            <div class="search-bar">
+              <i data-lucide="search"></i>
+              <input type="text" id="feed-search-input" placeholder="Search issues by description or tag...">
+            </div>
+            
+            <div class="filter-group">
+              <select id="filter-category" class="filter-select">
+                <option value="all">All Categories</option>
+                <option value="Road Damage">Road Damage</option>
+                <option value="Infrastructure">Infrastructure</option>
+                <option value="Waste Management">Waste Management</option>
+                <option value="Utilities">Utilities</option>
+              </select>
+
+              <select id="filter-status" class="filter-select">
+                <option value="all">All Statuses</option>
+                <option value="reported">Reported</option>
+                <option value="verified">Verified</option>
+                <option value="scheduled">Scheduled</option>
+                <option value="resolved">Resolved</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="feed-grid" id="feed-issues-grid">
+            <!-- Dynamic feed items loaded here -->
+          </div>
+        </section>
+
+        <!-- REPORT ISSUE VIEW (WIZARD) -->
+        <section id="report-view" class="view-section">
+          <div class="wizard-card">
+            
+            <div class="wizard-steps">
+              <div class="step-indicator active" data-step="1">
+                <div class="step-dot">1</div>
+                <span class="step-label">Upload Media</span>
+              </div>
+              <div class="step-indicator" data-step="2">
+                <div class="step-dot">2</div>
+                <span class="step-label">Report Details</span>
+              </div>
+              <div class="step-indicator" data-step="3">
+                <div class="step-dot">3</div>
+                <span class="step-label">Pin Location</span>
+              </div>
+              <div class="step-indicator" data-step="4">
+                <div class="step-dot">4</div>
+                <span class="step-label">Complete</span>
+              </div>
+            </div>
+
+            <!-- Step 1 Content: Media Upload -->
+            <div class="wizard-step-content active" id="step-content-1">
+              <h3 style="font-family: var(--font-display); margin-bottom: 1rem;">Upload Photo or Video</h3>
+              <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1.5rem;">Upload visual proof of the community issue. High quality files help speed up municipal approval.</p>
+              
+              <div class="upload-zone" id="media-upload-zone">
+                <i data-lucide="cloud-upload" class="upload-icon"></i>
+                <h4 style="margin-bottom: 0.25rem;">Drag and drop file here</h4>
+                <p style="color: var(--text-muted); font-size: 0.75rem;">or click to browse local files (Supports JPEG, PNG, MP4)</p>
+                <input type="file" id="wizard-file-input" accept="image/*,video/*" style="display: none;">
+              </div>
+
+              <!-- Preload mock images options -->
+              <div style="margin-top: 1.5rem;">
+                <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.75rem; text-align: center;">Or quick-select a sample issue image for this demo:</p>
+                <div style="display: flex; gap: 0.75rem; justify-content: center;">
+                  <button type="button" class="btn-verify" id="quick-pic-pothole" style="background: rgba(255,255,255,0.03); border-color: var(--border-glass);">Pothole Photo</button>
+                  <button type="button" class="btn-verify" id="quick-pic-light" style="background: rgba(255,255,255,0.03); border-color: var(--border-glass);">Dark Streetlight</button>
+                  <button type="button" class="btn-verify" id="quick-pic-trash" style="background: rgba(255,255,255,0.03); border-color: var(--border-glass);">Trash Overflow</button>
+                </div>
+              </div>
+
+              <div class="preview-container" id="upload-preview-container">
+                <img src="" class="preview-img" id="upload-preview-img" alt="Uploaded Preview">
+                <button class="btn-remove-preview" id="btn-clear-preview"><i data-lucide="trash-2" style="width: 16px; height: 16px;"></i></button>
+              </div>
+            </div>
+
+            <!-- Step 2 Content: Details & AI Assist -->
+            <div class="wizard-step-content" id="step-content-2">
+              <h3 style="font-family: var(--font-display); margin-bottom: 1rem;">Provide Details</h3>
+              
+              <div class="form-group">
+                <label for="wizard-desc">Describe the Issue</label>
+                <textarea id="wizard-desc" rows="4" placeholder="Describe the issue in detail. e.g., 'Large pothole about 2 feet wide right in front of the grocery store, filling up with water after rain.'"></textarea>
+              </div>
+
+              <!-- AI Assist Scanner Box -->
+              <div class="ai-assist-box" id="ai-scanner-box">
+                <div class="scan-line"></div>
+                <div class="ai-header">
+                  <i data-lucide="brain-circuit"></i>
+                  <span>AI Categorization & Assist</span>
+                </div>
+                <p style="font-size: 0.8rem; color: var(--text-muted); line-height: 1.4;">Our AI assistant will scan your description to generate the optimal category, tags, and severity level dynamically.</p>
+                <button type="button" class="btn-ai-analyze" id="btn-ai-trigger"><i data-lucide="sparkles" style="width: 14px; height: 14px;"></i> Analyze Description</button>
+
+                <!-- AI Output parameters -->
+                <div class="ai-output-box" id="ai-scanner-output">
+                  <span style="font-size: 0.8rem; color: var(--secondary); font-weight: 600;">AI Analysis Result:</span>
+                  <div class="ai-output-grid">
+                    <div>
+                      <span class="ai-field-label">Category:</span>
+                      <span class="ai-field-value" id="ai-res-category">-</span>
+                    </div>
+                    <div>
+                      <span class="ai-field-label">Suggested Severity:</span>
+                      <span class="ai-field-value" id="ai-res-severity">-</span>
+                    </div>
+                    <div style="grid-column: span 2;">
+                      <span class="ai-field-label">Tags:</span>
+                      <span class="ai-field-value" id="ai-res-tags">-</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-group" style="margin-top: 1.5rem;">
+                <label for="wizard-title">Report Title</label>
+                <input type="text" id="wizard-title" placeholder="e.g. Major Pothole on Pine Street">
+              </div>
+
+              <div class="form-group">
+                <label for="wizard-category">Confirmed Category</label>
+                <select id="wizard-category">
+                  <option value="Road Damage">Road Damage</option>
+                  <option value="Infrastructure">Infrastructure</option>
+                  <option value="Waste Management">Waste Management</option>
+                  <option value="Utilities">Utilities</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Step 3 Content: Pin Location -->
+            <div class="wizard-step-content" id="step-content-3">
+              <h3 style="font-family: var(--font-display); margin-bottom: 1rem;">Select Location</h3>
+              <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1.5rem;">Click/tap on the map or click 'Detect Location' to pinpoint where the issue is located.</p>
+              
+              <div id="picker-map"></div>
+              
+              <button type="button" class="btn-verify" id="btn-detect-gps" style="margin-bottom: 1.5rem;"><i data-lucide="map-pin" style="width: 14px; height: 14px;"></i> Detect My Location</button>
+
+              <div class="form-group">
+                <label for="wizard-address">Address Description</label>
+                <input type="text" id="wizard-address" placeholder="e.g., Near 241 Pine St, next to bakery">
+              </div>
+            </div>
+
+            <!-- Step 4 Content: Complete & Spark Points -->
+            <div class="wizard-step-content" id="step-content-4">
+              <div class="success-card">
+                <div class="success-badge-icon">
+                  <i data-lucide="check-check"></i>
+                </div>
+                <h2 style="font-family: var(--font-display); margin-bottom: 0.5rem;">Issue Reported Successfully!</h2>
+                <p style="color: var(--text-muted); font-size: 0.9rem;">Thank you for contributing to your community. Other users can now verify this issue in the feed.</p>
+                
+                <div class="success-points">
+                  <span>+50 Impact Points Awarded</span>
+                </div>
+                <p style="font-size: 0.75rem; color: var(--text-dark);">Your points have been added to your profile leaderboard status.</p>
+              </div>
+            </div>
+
+            <!-- Wizard Footer Navigation Buttons -->
+            <div class="wizard-footer" id="wizard-footer-nav">
+              <button class="btn-nav-wizard" id="btn-wizard-prev" style="visibility: hidden;">
+                <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i> Back
+              </button>
+              <button class="btn-nav-wizard btn-nav-wizard-primary" id="btn-wizard-next">
+                Next <i data-lucide="arrow-right" style="width: 16px; height: 16px;"></i>
+              </button>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- IMPACT & ANALYTICS VIEW -->
+        <section id="analytics-view" class="view-section">
+          <div class="analytics-grid">
+            
+            <div class="analytics-card analytics-card-wide">
+              <h3 style="font-family: var(--font-display); margin-bottom: 1rem;">Monthly Issue Activity</h3>
+              <div class="chart-container">
+                <canvas id="monthlyChart"></canvas>
+              </div>
+            </div>
+
+            <div class="analytics-card">
+              <h3 style="font-family: var(--font-display); margin-bottom: 1rem;">Issues by Category</h3>
+              <div class="chart-container">
+                <canvas id="categoryChart"></canvas>
+              </div>
+            </div>
+
+            <div class="analytics-card">
+              <h3 style="font-family: var(--font-display); margin-bottom: 0.75rem;">Predictive AI Insights</h3>
+              <p style="color: var(--text-muted); font-size: 0.8rem; margin-bottom: 1rem;">Intelligent municipal insights based on infrastructure age, report spikes, and forecasts.</p>
+              
+              <div class="insights-panel">
+                <div class="insight-card">
+                  <div class="insight-icon"><i data-lucide="cloud-rain" style="color: var(--primary);"></i></div>
+                  <div class="insight-info">
+                    <h5>High Risk: Sector 4 Drainage</h5>
+                    <p>Heavy rainfall forecasted in 48 hours. Historical sewage clog reports indicate high risk of flooding around Maple Ave.</p>
+                  </div>
+                </div>
+                <div class="insight-card">
+                  <div class="insight-icon"><i data-lucide="moon" style="color: var(--secondary);"></i></div>
+                  <div class="insight-info">
+                    <h5>Dark Zone Warning: Oak Street</h5>
+                    <p>3 reported damaged streetlights within a 100m radius. Crime statistics link dark zones to pedestrian safety concerns.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- HERO / GAMIFICATION CENTER VIEW -->
+        <section id="gamify-view" class="view-section">
+          <div class="gamify-grid">
+            
+            <!-- User Status Profile Card -->
+            <div class="profile-card">
+              <div class="profile-header-large">
+                <div class="avatar-large" id="badge-avatar-large">A</div>
+                <div class="user-title-box">
+                  <h2 style="font-family: var(--font-display);" id="badge-username-large">Alex Rivera</h2>
+                  <span class="user-level-tag" id="badge-level-tag">Level 3 • Community Guard</span>
+                </div>
+              </div>
+
+              <!-- XP Progress Bar -->
+              <div class="progress-container">
+                <div class="progress-bar-labels">
+                  <span style="color: var(--text-muted);">XP Progress</span>
+                  <span id="badge-progress-text">1450 / 2000 XP</span>
+                </div>
+                <div class="progress-bar-bg">
+                  <div class="progress-bar-fill" id="badge-progress-fill" style="width: 72.5%;"></div>
+                </div>
+              </div>
+
+              <!-- Stats breakdown -->
+              <div style="display: flex; justify-content: space-between; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 1.25rem;">
+                <div style="text-align: center;">
+                  <span style="display:block; font-size: 0.75rem; color: var(--text-muted);">Reports Created</span>
+                  <span style="font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; color: var(--primary);" id="badge-stat-reports">14</span>
+                </div>
+                <div style="text-align: center;">
+                  <span style="display:block; font-size: 0.75rem; color: var(--text-muted);">Issues Verified</span>
+                  <span style="font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; color: var(--secondary);" id="badge-stat-verifies">48</span>
+                </div>
+                <div style="text-align: center;">
+                  <span style="display:block; font-size: 0.75rem; color: var(--text-muted);">Solutions Upvoted</span>
+                  <span style="font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; color: var(--status-resolved);" id="badge-stat-resolutions">32</span>
+                </div>
+              </div>
+
+              <!-- Badges Grid -->
+              <div>
+                <h4 style="font-family: var(--font-display); margin-bottom: 1rem;">Earned Badges</h4>
+                <div class="badges-gallery">
+                  <div class="badge-item">
+                    <div class="badge-icon" style="color: #ffd700;"><i data-lucide="eye"></i></div>
+                    <span class="badge-name">Pothole Scout</span>
+                    <span class="badge-desc">Report first road defect</span>
+                  </div>
+                  <div class="badge-item">
+                    <div class="badge-icon" style="color: #3b82f6;"><i data-lucide="shield-check"></i></div>
+                    <span class="badge-name">Truth Seeker</span>
+                    <span class="badge-desc">Verify 20 local issues</span>
+                  </div>
+                  <div class="badge-item">
+                    <div class="badge-icon" style="color: #10b981;"><i data-lucide="flame"></i></div>
+                    <span class="badge-name">Civic Pillar</span>
+                    <span class="badge-desc">Active 7 days streak</span>
+                  </div>
+                  <div class="badge-item locked">
+                    <div class="badge-icon"><i data-lucide="crown"></i></div>
+                    <span class="badge-name">Grand Hero</span>
+                    <span class="badge-desc">Reach Level 5 rank</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Leaderboard Card -->
+            <div class="leaderboard-card">
+              <h3 style="font-family: var(--font-display); margin-bottom: 1rem;">Neighborhood Leaderboard</h3>
+              <ul class="leaderboard-list" id="leaderboard-list">
+                <!-- Leaderboard dynamically rendered here -->
+              </ul>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- AUTHORITY CONSOLE VIEW -->
+        <section id="authority-view" class="view-section">
+          <div class="authority-grid">
+            
+            <!-- Left panel: Work orders selection -->
+            <div class="workorders-panel">
+              <div class="panel-header">
+                <span>Assigned Work Tickets</span>
+                <i data-lucide="layers" style="width:16px; height:16px; color: var(--text-muted);"></i>
+              </div>
+              <ul class="workorders-list" id="authority-workorders-list">
+                <!-- Workorders loaded here -->
+              </ul>
+            </div>
+
+            <!-- Right panel: Details & Action -->
+            <div class="workorder-details-panel" id="authority-details-pane">
+              <!-- Loaded dynamically or shows empty state -->
+            </div>
+
+          </div>
+        </section>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- Toast Notification Wrapper -->
+  <div class="toast-container" id="toast-wrapper"></div>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <!-- Application JS -->
+  <script src="app.js"></script>
+</body>
+</html>
